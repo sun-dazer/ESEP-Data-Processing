@@ -1,54 +1,40 @@
-#include "InMemoryDB.h"
-#include <iostream>
-#include <unordered_map>
+#include "InMem.h"
 #include <stdexcept>
-
-class InMemoryDBImpl : public InMemoryDB {
-private:
-    std::unordered_map<std::string, int> database;
-    std::unordered_map<std::string, int> transaction;
-    bool transaction_in_progress = false;
-public: 
-    int get(const std::string& key) override {
-        if (transaction_in_progress && transaction.find(key) != transaction.end()) {
-            return transaction[key];
-        }
-        if (database.find(key) != database.end()) {
-            return database[key];
-        }
-        throw std::runtime_error("Key not found");
+int InMem::get(const std::string& key) {
+    if (transaction_in_progress && transaction.find(key) != transaction.end()) {
+        return transaction[key];
     }
-
-    void put(const std::string& key, int val) override {
-        if (!transaction_in_progress) {
-            throw std::runtime_error("No transaction in progress");
-        }
-        transaction[key] = val;
+    if (database.find(key) != database.end()) {
+        return database[key];
     }
-
-    void begin_transaction() override {
-        if (transaction_in_progress) {
-            throw std::runtime_error("Transaction is already in progress");
-        }
-        transaction.clear();
-        transaction_in_progress = true;
+    throw std::runtime_error("Key not found");
+}
+void InMem::put(const std::string& key, int val) {
+    if (!transaction_in_progress) {
+        throw std::runtime_error("No transaction in progress");
     }
-
-    void commit() override {
-        if (!transaction_in_progress) {
-            throw std::runtime_error("No transaction in progress");
-        }
-        for (const auto& pair : transaction) {
-            database[pair.first] = pair.second;
-        }
-        transaction_in_progress = false;
+    transaction[key] = val;
+}
+void InMem::begin_transaction() {
+    if (transaction_in_progress) {
+        throw std::runtime_error("A transaction is already in progress");
     }
-
-    void rollback() override {
-        if (!transaction_in_progress) {
-            throw std::runtime_error("No transaction in progress");
-        }
-        transaction.clear();
-        transaction_in_progress = false;
+    transaction.clear();
+    transaction_in_progress = true;
+}
+void InMem::commit() {
+    if (!transaction_in_progress) {
+        throw std::runtime_error("No transaction in progress");
     }
-};
+    for (const auto& pair : transaction) {
+        database[pair.first] = pair.second;
+    }
+    transaction_in_progress = false;
+}
+void InMem::rollback() {
+    if (!transaction_in_progress) {
+        throw std::runtime_error("No transaction in progress");
+    }
+    transaction.clear();
+    transaction_in_progress = false;
+}
