@@ -4,6 +4,11 @@
 #include <stdexcept>
 
 class InMemoryDBImpl : public InMemoryDB {
+private:
+    std::unordered_map<std::string, int> database;
+    std::unordered_map<std::string, int> transaction;
+    bool transaction_in_progress = false;
+public: 
     int get(const std::string& key) override {
         if (transaction_in_progress && transaction.find(key) != transaction.end()) {
             return transaction[key];
